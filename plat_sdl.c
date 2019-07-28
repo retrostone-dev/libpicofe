@@ -196,20 +196,12 @@ int plat_sdl_init(void)
     printf("plat_sdl: using %dx%d as fullscreen resolution\n", fs_w, fs_h);
   }
 
-  g_menuscreen_w = 640;
-  if (fs_w != 0 && g_menuscreen_w > fs_w)
-    g_menuscreen_w = fs_w;
-  g_menuscreen_h = 480;
-  if (fs_h != 0) {
-    h = fs_h;
-    if (info && info->wm_available && h > WM_DECORATION_H)
-      h -= WM_DECORATION_H;
-    if (g_menuscreen_h > h)
-      g_menuscreen_h = h;
-  }
+  g_menuscreen_w = fs_w;
+  g_menuscreen_h = fs_h;
 
   ret = plat_sdl_change_video_mode(g_menuscreen_w, g_menuscreen_h, 1);
-  if (ret != 0) {
+  if (ret != 0)
+  {
     plat_sdl_screen = SDL_SetVideoMode(0, 0, 16, SDL_SWSURFACE);
     if (plat_sdl_screen == NULL) {
       fprintf(stderr, "SDL_SetVideoMode failed: %s\n", SDL_GetError());
@@ -224,7 +216,7 @@ int plat_sdl_init(void)
   }
   g_menuscreen_w = window_w = plat_sdl_screen->w;
   g_menuscreen_h = window_h = plat_sdl_screen->h;
-
+  
   // overlay/gl require native bpp in some cases..
   plat_sdl_screen = SDL_SetVideoMode(g_menuscreen_w, g_menuscreen_h,
     0, plat_sdl_screen->flags);
