@@ -48,6 +48,8 @@ int plat_sdl_change_video_mode(int w, int h, int force)
     h = prev_h;
   else
     prev_h = h;
+    
+   plat_target.vout_method = 1;
 
   // invalid method might come from config..
   if (plat_target.vout_method != 0
@@ -55,7 +57,7 @@ int plat_sdl_change_video_mode(int w, int h, int force)
       && plat_target.vout_method != vout_mode_gl)
   {
     fprintf(stderr, "invalid vout_method: %d\n", plat_target.vout_method);
-    plat_target.vout_method = 0;
+    plat_target.vout_method = 1;
   }
 
   // skip GL recreation if window doesn't change - avoids flicker
@@ -78,8 +80,9 @@ int plat_sdl_change_video_mode(int w, int h, int force)
     Uint32 flags = SDL_RESIZABLE | SDL_SWSURFACE;
     int win_w = window_w;
     int win_h = window_h;
-
-    if (plat_target.vout_fullscreen) {
+	win_w = fs_w;
+	win_h = fs_h;
+	if (plat_target.vout_fullscreen) {
       flags |= SDL_FULLSCREEN;
       win_w = fs_w;
       win_h = fs_h;
@@ -120,11 +123,13 @@ int plat_sdl_change_video_mode(int w, int h, int force)
   if (plat_target.vout_method == 0) {
     SDL_PumpEvents();
 
-    plat_sdl_screen = SDL_SetVideoMode(w, h, 16, SDL_HWSURFACE | SDL_DOUBLEBUF);
+    plat_sdl_screen = SDL_SetVideoMode(0, 0, 16, SDL_HWSURFACE);
     if (plat_sdl_screen == NULL) {
       fprintf(stderr, "SDL_SetVideoMode failed: %s\n", SDL_GetError());
       return -1;
     }
+    w = plat_sdl_screen->w;
+    h = plat_sdl_screen->h;
   }
 
   old_fullscreen = plat_target.vout_fullscreen;
@@ -199,6 +204,7 @@ int plat_sdl_init(void)
   g_menuscreen_w = fs_w;
   g_menuscreen_h = fs_h;
 
+  SDL_ShowCursor(SDL_DISABLE);
   ret = plat_sdl_change_video_mode(g_menuscreen_w, g_menuscreen_h, 1);
   if (ret != 0)
   {
@@ -217,6 +223,8 @@ int plat_sdl_init(void)
   g_menuscreen_w = window_w = plat_sdl_screen->w;
   g_menuscreen_h = window_h = plat_sdl_screen->h;
   
+ ret = plat_sdl_change_video_mode(g_menuscreen_w, g_menuscreen_h, 1);
+
   // overlay/gl require native bpp in some cases..
   plat_sdl_screen = SDL_SetVideoMode(g_menuscreen_w, g_menuscreen_h,
     0, plat_sdl_screen->flags);
@@ -232,11 +240,7 @@ int plat_sdl_init(void)
       plat_sdl_overlay->format, plat_sdl_overlay->planes, *plat_sdl_overlay->pitches,
       plat_sdl_overlay->hw_overlay);
 
-    if (plat_sdl_overlay->hw_overlay)
-      overlay_works = 1;
-    else
-      fprintf(stderr, "warning: video overlay is not hardware accelerated, "
-                      "not going to use it.\n");
+    overlay_works = 1;
     SDL_FreeYUVOverlay(plat_sdl_overlay);
     plat_sdl_overlay = NULL;
   }
@@ -275,6 +279,8 @@ int plat_sdl_init(void)
     vout_list[i++] = "OpenGL";
   }
   plat_target.vout_methods = vout_list;
+  
+  SDL_FillRect(plat_sdl_screen, NULL, 0);
 
   return 0;
 
